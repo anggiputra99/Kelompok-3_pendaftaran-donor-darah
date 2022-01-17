@@ -1,86 +1,72 @@
 <?php
-Class pendonor extends CI_Controller{
-    
-    var $API ="";
-    
-    function __construct() {
-        parent::__construct();
-        $this->API="http://localhost/cdonor/rest_ci/index.php";
-        $this->load->library('session');
-        $this->load->library('curl');
-        $this->load->helper('form');
-        $this->load->helper('url');
+
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+require APPPATH . '/libraries/REST_Controller.php';
+use Restserver\Libraries\REST_Controller;
+
+class pendonor extends REST_Controller {
+
+    function __construct($config = 'rest') {
+        parent::__construct($config);
+        $this->load->database();
     }
-    
-    // menampilkan data pendonor
-    function index(){
-        $data['datapendonor'] = json_decode($this->curl->simple_get($this->API.'/pendonor'));
-        $this->load->view('pendonor/list',$data);
+
+    function index_get() {
+        $id_pendonor = $this->get('id_pendonor');
+        if ($id_pendonor == '') {
+            $pendonor = $this->db->get('pendonor')->result();
+        } else {
+            $this->db->where('id_pendonor', $id_pendonor);
+            $pendonor = $this->db->get('pendonor')->result();
+        }
+        $this->response($pendonor,);
     }
-    // insert data pendonor
-    function create(){
-        if(isset($_POST['submit'])){
-            $data = array(
-                'id_pendonor'    =>  $this->input->post('id_pendonor'),
-                'nama'           =>  $this->input->post('nama'),
-                'alamat'         =>  $this->input->post('alamat'),
-                'tanggal_lahir'  =>  $this->input->post('tanggal_lahir'),
-                'jenis_kelamin'  =>  $this->input->post('jenis_kelamin'),
-                'gol_darah'      =>  $this->input->post('gol_darah'),);
-            $insert =  $this->curl->simple_post($this->API.'/pendonor', $data, array(CURLOPT_BUFFERSIZE => 10)); 
-            if($insert)
-            {
-                $this->session->set_flashdata('hasil','Insert Data Berhasil');
-            }else
-            {
-               $this->session->set_flashdata('hasil','Insert Data Gagal');
-            }
-            redirect('pendonor');
-        }else{
-            $this->load->view('pendonor/create');
+
+    function index_post() {
+        $data = array(
+                    'id_pendonor'    => $this->post('id_pendonor'),
+                    'nama'           => $this->post('nama'),
+                    'alamat'         => $this->post('alamat'),
+                    'tanggal_lahir'  => $this->post('tanggal_lahir'),
+                    'jenis_kelamin'  => $this->post('jenis_kelamin'),
+                    'gol_darah'      => $this->post('gol_darah'));
+        $insert = $this->db->insert('pendonor', $data);
+        if ($insert) {
+            $this->response($data, REST_Controller::HTTP_OK);
+        } else {
+            $this->response(array('status' => 'fail', 502));
         }
     }
-    
-    // edit data pendonor
-    function edit(){
-        if(isset($_POST['submit'])){
-            $data = array(
-                'id_pendonor'     =>  $this->input->post('id_pendonor'),
-                'nama'        =>  $this->input->post('nama'),
-                'alamat'  =>  $this->input->post('alamat'),
-                'tanggal_lahir'     =>  $this->input->post('tanggal_lahir'),
-                'jenis_kelamin'        =>  $this->input->post('jenis_kelamin'),
-                'gol_darah'  =>  $this->input->post('gol_darah'),);
-            $update =  $this->curl->simple_put($this->API.'/pendonor', $data, array(CURLOPT_BUFFERSIZE => 10)); 
-            if($update)
-            {
-                $this->session->set_flashdata('hasil','Update Data Berhasil');
-            }else
-            {
-               $this->session->set_flashdata('hasil','Update Data Gagal');
-            }
-            redirect('pendonor');
-        }else{
-            $params = array('id_pendonor'=>  $this->uri->segment(3));
-            $data['datapendonor'] = json_decode($this->curl->simple_get($this->API.'/pendonor',$params));
-            $this->load->view('pendonor/edit',$data);
+
+    function index_put() {
+        $id_pendonor = $this->put('id_pendonor');
+        $data = array(
+                    'id_pendonor'    => $this->put('id_pendonor'),
+                    'nama'           => $this->put('nama'),
+                    'alamat'         => $this->put('alamat'),
+                    'tanggal_lahir'  => $this->put('tanggal_lahir'),
+                    'jenis_kelamin'  => $this->put('jenis_kelamin'),
+                    'gol_darah'      => $this->put('gol_darah'));
+        $this->db->where('id_pendonor', $id_pendonor);
+        $update = $this->db->update('pendonor', $data);
+        if ($update) {
+            $this->response($data,);
+        } else {
+            $this->response(array('status' => 'fail', 502));
         }
     }
-    
-    // delete data pendonor
-    function delete($id_pendonor){
-        if(empty($id_pendonor)){
-            redirect('pendonor');
-        }else{
-            $delete =  $this->curl->simple_delete($this->API.'/pendonor', array('id_pendonor'=>$id_pendonor), array(CURLOPT_BUFFERSIZE => 10)); 
-            if($delete)
-            {
-                $this->session->set_flashdata('hasil','Delete Data Berhasil');
-            }else
-            {
-               $this->session->set_flashdata('hasil','Delete Data Gagal');
-            }
-            redirect('pendonor');
+
+    function index_delete() {
+        $id_pendonor = $this->delete('id_pendonor');
+        $this->db->where('id_pendonor', $id_pendonor);
+        $delete = $this->db->delete('pendonor');
+        if ($delete) {
+            $this->response(array('status' => 'success'), 201);
+        } else {
+            $this->response(array('status' => 'fail', 502));
         }
     }
+
 }
+?>
